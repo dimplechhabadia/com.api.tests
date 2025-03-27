@@ -74,8 +74,6 @@ public class PetApiTests {
         String updatedPetJson = readJsonFile("src/test/resources/update_pet.json");
         String endpoint = BASE_URL + "/pet";
 
-        //given().contentType(ContentType.JSON).body(updatedPetJson).when().put(BASE_URL + "/pet").then().statusCode(200)
-        // .body("status", equalTo("sold")).body("photoUrls[0]", equalTo("https://example.com/updated-photo.jpg"));
         // Send PUT request using utility method
         Response response = RestAssuredUtils.sendPutRequest(BASE_URL, endpoint, null, updatedPetJson);
 
