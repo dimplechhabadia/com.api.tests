@@ -83,14 +83,18 @@ public class PetApiTests {
     }
 
     // 4. Delete Pet (DELETE /pet/{petId})
-//    @Test
-//    public void deletePet() {
-//        given()
-//                .pathParam("petId", 34567)
-//                .when()
-//                .delete(BASE_URL + "/pet/{petId}")
-//                .then()
-//                .statusCode(200)
-//                .body("message", equalTo("Pet 34567 deleted"));
-//    }
+    @Test
+    public void deletePet() {
+        String endpoint = "/pet/123"; // Example pet ID for deletio
+
+        // Send DELETE request using the utility
+        Response response = RestAssuredUtils.sendDeleteRequest( endpoint, null);
+
+        // Verify the response status code (200 for successful deletion)
+        Assert.assertEquals(response.getStatusCode(), 200, "Expected status code is 200");
+
+        // Optionally, check response body if relevant
+        String responseBody = response.getBody().asString();
+        System.out.println("Response Body: " + responseBody);
+    }
 }

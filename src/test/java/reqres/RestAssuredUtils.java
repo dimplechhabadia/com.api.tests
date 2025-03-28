@@ -76,4 +76,21 @@ public class RestAssuredUtils {
                 .then()
                 .extract().response();
     }
+
+    public static Response sendDeleteRequest(String endpoint, Map<String, String> headers) {
+
+        // Start building the request
+        var requestSpecification = RestAssured.given();
+
+        // Add headers if provided
+        if (headers != null && !headers.isEmpty()) {
+            requestSpecification.headers(headers);
+        }
+
+        // Send DELETE request and return the response
+        return requestSpecification
+                .baseUri(BASE_URL)
+                .when()
+                .delete(endpoint);
+    }
 }
