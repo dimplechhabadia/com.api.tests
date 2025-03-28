@@ -8,18 +8,12 @@ import java.util.Map;
 
 public class RestAssuredUtils {
 
-    /**
-     * Generic method to send a POST request using Rest Assured
-     *
-     * @param baseURI      - Base URI of the API
-     * @param endpoint     - API endpoint
-     * @param headers      - Map of request headers
-     * @param requestBody  - Request payload in JSON format
-     * @return Response    - Rest Assured response object
-     */
-    public static Response sendPostRequest(String baseURI, String endpoint, Map<String, String> headers, String requestBody) {
-        RestAssured.baseURI = baseURI;
-        RequestSpecification request = RestAssured.given();
+    private static final String BASE_URL = "https://petstore.swagger.io/v2";
+    static {
+        System.out.println(BASE_URL);
+    }
+    public static Response sendPostRequest(String endpoint, Map<String, String> headers, String requestBody) {
+        RequestSpecification request = RestAssured.given().contentType(ContentType.JSON);
 
         // Add headers if provided
         if (headers != null && !headers.isEmpty()) {
@@ -31,18 +25,18 @@ public class RestAssuredUtils {
 
         // Send the POST request and return response
         return request
-                .contentType("application/json")
+                .baseUri(BASE_URL)
+                .body(requestBody)
                 .when()
                 .post(endpoint)
                 .then()
-                .extract()
-                .response();
+                .extract().response();
     }
 
     // Reusable GET Request Method
-    public static Response sendGetRequest(String baseUrl, String endpoint, Map<String, String> headers) {
+    public static Response sendGetRequest(String endpoint, Map<String, String> headers) {
         // Request specification
-        RequestSpecification request = RestAssured.given();
+        RequestSpecification request = RestAssured.given().contentType(ContentType.JSON);
 
         // Add headers if any
         if (headers != null) {
@@ -53,7 +47,7 @@ public class RestAssuredUtils {
 
         // Send GET request and return response
         return request
-                .baseUri(baseUrl)
+                .baseUri(BASE_URL)
                 .when()
                 .get(endpoint)
                 .then()
@@ -61,7 +55,7 @@ public class RestAssuredUtils {
     }
 
     // Reusable PUT Request Method
-    public static Response sendPutRequest(String baseUrl, String endpoint, Map<String, String> headers, String body) {
+    public static Response sendPutRequest(String endpoint, Map<String, String> headers, String body) {
         // Request specification
         RequestSpecification request = RestAssured.given();
 
@@ -74,7 +68,7 @@ public class RestAssuredUtils {
 
         // Send PUT request and return response
         return request
-                .baseUri(baseUrl)
+                .baseUri(BASE_URL)
                 .contentType(ContentType.JSON)
                 .body(body) // Add request body for PUT
                 .when()

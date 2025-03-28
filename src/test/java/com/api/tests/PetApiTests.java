@@ -1,38 +1,33 @@
 package com.api.tests;
 
-import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.apache.http.HttpStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import reqres.JsonUtils;
 import reqres.RestAssuredUtils;
 
 import java.io.IOException;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.core.IsEqual.equalTo;
 import static org.testng.Assert.assertEquals;
 
 public class PetApiTests {
 
-    private final String BASE_URL = "https://petstore.swagger.io/v2";
 
-    // Read the JSON from a file
-    private String readJsonFile(String filePath) throws IOException {
-        return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(filePath)));
-    }
+    private static final String JSON_FILE_PATH = "src/test/resources/pet_data.json";
 
     // 1. Add a new Pet (POST /pet)
     @Test
     public void addPet() throws IOException {
         //arrange
-        String endPoint = BASE_URL + "/pet";
-        String petJson = readJsonFile("src/test/resources/add_pet.json");
+        String endPoint = "/pet";
+        // Read "addPet" payload from JSON file
+        String requestBody = JsonUtils.readJsonFile(JSON_FILE_PATH, "addPet");
 
         //act
-        Response response = RestAssuredUtils.sendPostRequest(BASE_URL, endPoint, null, petJson);
+        Response response = RestAssuredUtils.sendPostRequest(endPoint, null, requestBody);
 
         // assert
         Assert.assertEquals(200, response.getStatusCode());
@@ -57,31 +52,34 @@ public class PetApiTests {
     @Test
     public void getPetById() {
 
-        String endpoint = "/pet/34567";
+        // Define the endpoint for GET request
+        String endpoint = "/pet/123";  // Example endpoint
+
         // Send GET request using utility method
-        Response response = RestAssuredUtils.sendGetRequest(BASE_URL, endpoint, null);
+        Response response = RestAssuredUtils.sendGetRequest(endpoint, null);
 
         // Validate the response status code
-        assertEquals(response.getStatusCode(), HttpStatus.SC_OK, "Expected status code 200");
+        Assert.assertEquals(response.getStatusCode(), HttpStatus.SC_OK, "Expected status code 200");
 
         // Validate the response body (example: checking username)
-        assertEquals(response.jsonPath().getString("name"), "Buddy", "Name mismatch in response");
+        Assert.assertEquals(response.jsonPath().getString("name"), "Buddy Updated", "Name mismatch in response");
     }
 
     // 3. Update Pet (PUT /pet)
     @Test
     public void updatePet() throws IOException {
-        String updatedPetJson = readJsonFile("src/test/resources/update_pet.json");
-        String endpoint = BASE_URL + "/pet";
+        // Read "addPet" payload from JSON file
+        String requestBody = JsonUtils.readJsonFile(JSON_FILE_PATH, "updatePet");
+        String endpoint = "/pet";
 
         // Send PUT request using utility method
-        Response response = RestAssuredUtils.sendPutRequest(BASE_URL, endpoint, null, updatedPetJson);
+        Response response = RestAssuredUtils.sendPutRequest(endpoint, null, requestBody);
 
         // Validate the response status code
         Assert.assertEquals(response.getStatusCode(), 200, "Expected status code 200");
 
         // Validate the response body (example: checking name update)
-        Assert.assertEquals(response.jsonPath().getString("photoUrls[0]"), "https://example.com/updated-photo.jpg", "Photo mismatch in response");
+        Assert.assertEquals(response.jsonPath().getString("photoUrls[0]"), "https://example.com/dog-updated.jpg", "Photo mismatch in response");
     }
 
     // 4. Delete Pet (DELETE /pet/{petId})

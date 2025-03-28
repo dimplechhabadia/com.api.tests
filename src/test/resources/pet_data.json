@@ -1,0 +1,39 @@
+{
+  "addPet": {
+    "id": 123,
+    "name": "Buddy",
+    "category": {
+      "id": 1,
+      "name": "Dog"
+    },
+    "photoUrls": [
+      "https://example.com/dog.jpg"
+    ],
+    "tags": [
+      {
+        "id": 101,
+        "name": "Golden Retriever"
+      }
+    ],
+    "status": "available"
+  },
+
+  "updatePet": {
+    "id": 123,
+    "name": "Buddy Updated",
+    "category": {
+      "id": 1,
+      "name": "Dog"
+    },
+    "photoUrls": [
+      "https://example.com/dog-updated.jpg"
+    ],
+    "tags": [
+      {
+        "id": 101,
+        "name": "Golden Retriever"
+      }
+    ],
+    "status": "sold"
+  }
+}
