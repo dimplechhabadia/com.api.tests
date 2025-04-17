@@ -1,100 +1,92 @@
 package com.api.tests;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.response.Response;
-import org.apache.http.HttpStatus;
-import org.json.JSONException;
-import org.json.JSONObject;
+import models.Pet;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import reqres.JsonUtils;
-import reqres.RestAssuredUtils;
+import utils.JsonUtils;
+import utils.RestAssuredUtils;
 
 import java.io.IOException;
 
-import static org.testng.Assert.assertEquals;
-
 public class PetApiTests {
 
-
+    private static final String API_VERSION = "v2";
+    private static final String PET_ENDPOINT = "/pet";
     private static final String JSON_FILE_PATH = "src/test/resources/pet_data.json";
 
-    // 1. Add a new Pet (POST /pet)
+    // 1. Add a new Pet
     @Test
-    public void addPet() throws IOException {
-        //arrange
-        String endPoint = "/pet";
-        // Read "addPet" payload from JSON file
-        String requestBody = JsonUtils.readJsonFile(JSON_FILE_PATH, "addPet");
+    public void testAddPetUsingPOJO() throws IOException {
+        Pet pet = JsonUtils.readJsonAsObject(JSON_FILE_PATH, "addPet", Pet.class);
+        pet.name = "HybridDog_" + System.currentTimeMillis();
+        String requestBody = JsonUtils.convertObjectToJson(pet);
 
-        //act
-        Response response = RestAssuredUtils.sendPostRequest(endPoint, null, requestBody);
+        Response response = RestAssuredUtils.sendPostRequest(API_VERSION, PET_ENDPOINT, null, requestBody);
+        Assert.assertEquals(response.statusCode(), 200, "Status code mismatch");
 
-        // assert
-        Assert.assertEquals(200, response.getStatusCode());
+        Pet createdPet = new ObjectMapper().readValue(response.asString(), Pet.class);
+        Assert.assertEquals(createdPet.name, pet.name, "Name mismatch");
+        Assert.assertEquals(createdPet.status, pet.status, "Status mismatch");
+    }
 
-        // ✅ Convert String to JSON Object
-        String responseBodyString = response.getBody().asString();
+    // 2. Get Pet by ID
+    @Test
+    public void testGetPetById() {
+        String endpoint = PET_ENDPOINT + "/1";
+        Response response = RestAssuredUtils.sendGetRequest(API_VERSION, endpoint, null);
 
-        try {
-            JSONObject responseBody = new JSONObject(responseBodyString);
-            System.out.println("Parsed JSON Response: " + responseBody.toString(2)); // Pretty print
+        Assert.assertEquals(response.getStatusCode(), 200, "Status code mismatch on getPetById");
+        Assert.assertNotNull(response.jsonPath().getString("category.name"), "Category name is null in response");
+    }
 
-            // ✅ Validate Response Fields
-            assertEquals(responseBody.getString("name"), "Buddy", "Name mismatch");
-            assertEquals(responseBody.getString("status"), "available", "Job mismatch");
+    // 3. Update Pet
+    @Test
+    public void testUpdatePet() throws IOException {
+        Pet pet = JsonUtils.readJsonAsObject(JSON_FILE_PATH, "updatePet", Pet.class);
+        String requestBody = JsonUtils.convertObjectToJson(pet);
 
-        } catch (JSONException e) {
-            Assert.fail("Failed to parse response as JSON. Response: " + responseBodyString);
+        Response response = RestAssuredUtils.sendPutRequest(API_VERSION, PET_ENDPOINT, null, requestBody);
+
+        Assert.assertEquals(response.getStatusCode(), 200, "Status code mismatch on updatePet");
+        Assert.assertEquals(response.jsonPath().getString("photoUrls[0]"),
+                "https://example.com/dog-updated.jpg", "Photo URL mismatch");
+    }
+
+    // 4. Delete Pet
+    @Test
+    public void testDeletePet() {
+        String petId = "123";
+        String endpoint = PET_ENDPOINT + "/" + petId;
+
+        Response response = RestAssuredUtils.sendDeleteRequest(API_VERSION, endpoint, null);
+
+        Assert.assertEquals(response.getStatusCode(), 200, "Status code mismatch on deletePet");
+    }
+
+    // 5. Data-driven test for multiple pets
+    @DataProvider(name = "petDataProvider")
+    public Object[][] petDataProvider() throws IOException {
+        String json = JsonUtils.readJsonFile("src/test/resources/multiple_pets.json");
+        Pet[] pets = new ObjectMapper().readValue(json, Pet[].class);
+        Object[][] data = new Object[pets.length][1];
+        for (int i = 0; i < pets.length; i++) {
+            data[i][0] = pets[i];
         }
+        return data;
     }
 
-    // 2. Get Pet by ID (GET /pet/{petId})
-    @Test
-    public void getPetById() {
+    @Test(dataProvider = "petDataProvider")
+    public void testAddMultiplePets(Pet pet) throws IOException {
+        pet.name += "_" + System.currentTimeMillis();
+        String body = new ObjectMapper().writeValueAsString(pet);
+        Response response = RestAssuredUtils.sendPostRequest(API_VERSION, PET_ENDPOINT, null, body);
 
-        // Define the endpoint for GET request
-        String endpoint = "/pet/123";  // Example endpoint
+        Assert.assertEquals(response.statusCode(), 200, "Status code mismatch");
 
-        // Send GET request using utility method
-        Response response = RestAssuredUtils.sendGetRequest(endpoint, null);
-
-        // Validate the response status code
-        Assert.assertEquals(response.getStatusCode(), HttpStatus.SC_OK, "Expected status code 200");
-
-        // Validate the response body (example: checking username)
-        Assert.assertEquals(response.jsonPath().getString("name"), "Buddy Updated", "Name mismatch in response");
-    }
-
-    // 3. Update Pet (PUT /pet)
-    @Test
-    public void updatePet() throws IOException {
-        // Read "addPet" payload from JSON file
-        String requestBody = JsonUtils.readJsonFile(JSON_FILE_PATH, "updatePet");
-        String endpoint = "/pet";
-
-        // Send PUT request using utility method
-        Response response = RestAssuredUtils.sendPutRequest(endpoint, null, requestBody);
-
-        // Validate the response status code
-        Assert.assertEquals(response.getStatusCode(), 200, "Expected status code 200");
-
-        // Validate the response body (example: checking name update)
-        Assert.assertEquals(response.jsonPath().getString("photoUrls[0]"), "https://example.com/dog-updated.jpg", "Photo mismatch in response");
-    }
-
-    // 4. Delete Pet (DELETE /pet/{petId})
-    @Test
-    public void deletePet() {
-        String endpoint = "/pet/123"; // Example pet ID for deletio
-
-        // Send DELETE request using the utility
-        Response response = RestAssuredUtils.sendDeleteRequest( endpoint, null);
-
-        // Verify the response status code (200 for successful deletion)
-        Assert.assertEquals(response.getStatusCode(), 200, "Expected status code is 200");
-
-        // Optionally, check response body if relevant
-        String responseBody = response.getBody().asString();
-        System.out.println("Response Body: " + responseBody);
+        Pet createdPet = new ObjectMapper().readValue(response.asString(), Pet.class);
+        Assert.assertEquals(createdPet.name, pet.name, "Name mismatch");
     }
 }
